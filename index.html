@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Testing</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+        }
+        h1{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #45a049;
+            
+            
+            
+            
+        }
+        body{
+            height: 100vh;
+            width: 100vw;
+        }
+        .body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 50px;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        input[type="text"] {
+            padding: 8px;
+            margin-right: 10px;
+        }
+
+        button[type="submit"],
+        #getBtn,
+        #deleteAllTasks {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        button[type="submit"]:hover,
+        #getBtn:hover,
+        #deleteAllTasks:hover {
+            background-color: #45a049;
+        }
+
+        #getAllTasks {
+            margin-bottom: 20px;
+        }
+
+        button {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>To-Do List</h1>
+
+    <div class="body">
+
+    <form onsubmit="post()">
+    
+       <label>Enter Task</label>
+       <input type="text" id="taskInput">
+       <button type="submit">Submit</button>
+
+    </form>
+   <div id="message"></div>
+   <button onclick="get()" id="getBtn">Show All Tasks</button>
+    <div id="getAllTasks"></div>
+
+    <p id="update"></p>
+
+    <button id="deleteAllTasks" onclick="deleteAllTasks()" >Delete All Tasks</button>
+
+</div>
+    
+</body>
+<script>
+    function post(){
+        const taskInput = document.getElementById("taskInput").value;
+        axios.post("http://localhost:2200/api/save",{task:taskInput})
+        .then(function (response) {
+                    console.log(response.data);
+                    document.querySelector("#message").innerText = response.data;
+                    
+                }
+                    .catch(function (error) {
+                        console.log(error.message);
+                    })
+
+                )
+    }
+
+    function get(){
+       getBtn =  document.getElementById("getBtn")
+        document.getElementById("getAllTasks").innerHTML = ``
+       axios.get(`http://localhost:2200/api/get`)
+       .then((response)=>{
+        const tasks = response.data;
+        if(getBtn.innerText == "Show All Tasks"){
+            getBtn.innerText = "Hide All Tasks"
+            const taskList = tasks.map((task,index)=>(
+                document.getElementById("getAllTasks").innerHTML += `${index+1} ) ${task.task}  <button onclick="editTask('${task._id}')">✏️</button>  <button onclick="deleteTask('${task._id}')">🗑️</button>  <br>`
+            ))
+        }else{
+            getBtn.innerText = "Show All Tasks" 
+            document.getElementById("getAllTasks").innerHTML = ``
+        }
+        
+       })
+    }
+
+    function editTask(taskId){
+        axios.get(`http://localhost:2200/api/get/${taskId}`)
+        .then((response)=>{
+        const taskToEdit = response.data;
+
+        document.getElementById("update").innerHTML = `
+                        <form onsubmit="updateTask(event, '${taskId}')">
+                            <label>Update Task</label>
+                            <input type="text"  placeholder="Enter Updated Task" id="taskInput1" value="${taskToEdit.task}">
+                            
+                            <button type="submit">Update</button>
+                        </form>
+                    `;
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+    
+    
+    }
+
+    function updateTask(event , taskId){
+        console.log("Updated")
+       event.preventDefault()
+       const taskInput1 = document.getElementById("taskInput1").value;
+       axios.put(`http://localhost:2200/api/update/${taskId}` , {task : taskInput1})
+       .then(function(response){
+          get();
+          document.getElementById("update").innerHTML = ''
+       })
+       
+    }
+
+    function deleteTask(taskId){
+        axios.delete(`http://localhost:2200/api/delete/${taskId}`)
+        .then(()=>{
+            get()
+        })
+    }
+
+    function deleteAllTasks(){
+        axios.delete(`http://localhost:2200/api/delete`)
+        .then(()=>{
+            console.log('Deleted')
+            get()
+        })
+        .catch(err=>console.log(err))
+    }
+</script>
+</html>
